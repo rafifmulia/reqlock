@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http/httptest"
 	"os"
 	"strings"
@@ -14,7 +15,7 @@ import (
 	"github.com/rafifmulia/reqlock/mcache"
 )
 
-// go test -v -count=3 -failfast -cpu=4 -run='^TestRequestHandler1$'
+// go test -v -count=1 -failfast -cpu=4 -run='^TestRequestHandler1$'
 func TestRequestHandler1(t *testing.T) {
 	var (
 		concurrentReq int32           = 40
@@ -47,6 +48,57 @@ func TestRequestHandler1(t *testing.T) {
 	}
 }
 
+// go test -v -count=1 -failfast -cpu=4 -run='^TestRequestHandler2$'
+func TestRequestHandler2(t *testing.T) {
+	var (
+		concurrentReq int32           = 1000
+		wg            *sync.WaitGroup = &sync.WaitGroup{}
+	)
+	ticketSvc.tickets = make([]*Ticket, 0, 1)
+	doReq := func() {
+		defer wg.Done()
+		room := rand.Int31n(10)
+		seat := rand.Int31n(10)
+		py := strings.NewReader(fmt.Sprintf("film=batman&room=%d&seat=%d", room, seat))
+		req := httptest.NewRequest("POST", "/ticket/book", py)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rec := httptest.NewRecorder()
+		RequestHandler(rec, req)
+		resp := rec.Result()
+		defer resp.Body.Close()
+		data := map[string]any{}
+		json.NewDecoder(resp.Body).Decode(&data)
+	}
+	wg.Add(int(concurrentReq))
+	for i := int32(0); i < concurrentReq; i++ {
+		go doReq()
+	}
+	wg.Wait()
+	t.Log("Total Concurrent Request:", concurrentReq, "Total Booked:", len(ticketSvc.tickets))
+	if len(ticketSvc.tickets) > 1 {
+		type ticketKey struct {
+			film string
+			room int32
+			seat int32
+		}
+		seen := make(map[ticketKey]bool)
+		for _, v := range ticketSvc.tickets {
+			key := ticketKey{
+				film: v.Film,
+				room: v.Room,
+				seat: v.Seat,
+			}
+			if seen[key] {
+				t.Fatalf("Duplicate ticket found: Film=%s, Room=%d, Seat=%d", v.Film, v.Room, v.Seat)
+			}
+			seen[key] = true
+		}
+	}
+}
+
+// This fuzz test run as a worker, it means different process, because found duplicated ticket,
+// but in TestRequestHandler* there are no duplicated ticket. So this is because fuzz test runs as a different process.
+// If run as different process, the memory will be different.
 // go test -v -fuzztime=1m -cpu=1 -fuzz='^FuzzRequestHandler1$' -run='notmatch'
 func FuzzRequestHandler1(f *testing.F) {
 	var (
