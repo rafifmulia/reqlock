@@ -32,7 +32,7 @@ func TestRequestHandler1(t *testing.T) {
 		go doReq()
 	}
 	wg.Wait()
-	t.Log("Total Booked:", len(ticketSvc.tickets))
+	t.Log("Total Concurrent Request:", concurrentReq, "Total Booked:", len(ticketSvc.tickets))
 	if len(ticketSvc.tickets) > 1 {
 		for _, v := range ticketSvc.tickets {
 			t.Error(v.Id, v.Film, v.Room, v.Seat)

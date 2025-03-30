@@ -4,16 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"sync"
 )
 
 var (
-	ticketSvc *TicketService = &TicketService{mux: &sync.Mutex{}}
+	ticketSvc *TicketService = &TicketService{}
 )
 
 func RequestHandler(w http.ResponseWriter, r *http.Request) {
 	var (
-		booked     bool
+		scBook     bool
 		room, seat int
 		film       string
 		err        error
@@ -32,9 +31,9 @@ func RequestHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	t := &Ticket{Film: film, Room: int32(room), Seat: int32(seat)}
-	booked = ticketSvc.Book(t)
+	scBook = ticketSvc.Book(t)
 	w.Header().Set("Content-Type", "application/json")
-	if !booked {
+	if !scBook {
 		w.WriteHeader(400)
 		json.NewEncoder(w).Encode(map[string]any{
 			"meta": map[string]any{
