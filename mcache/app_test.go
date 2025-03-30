@@ -22,6 +22,29 @@ func TestSet1(t *testing.T) {
 	for i := int32(0); i < concurrentReq; i++ {
 		go func() {
 			defer wg.Done()
+			ticket := &Ticket{Film: "batman", Room: 2, Seat: 7}
+			status := Set("bookseat", ticket)
+			if status {
+				panic("duplicated bookseat")
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+// go test -v -count=1 -failfast -cpu=4 -run='^TestSet2$'
+func TestSet2(t *testing.T) {
+	var (
+		concurrentReq int32           = 40
+		wg            *sync.WaitGroup = &sync.WaitGroup{}
+	)
+	ticket := Ticket{Film: "batman", Room: 2, Seat: 7}
+	Set("bookseat", ticket)
+	wg.Add(int(concurrentReq))
+	for i := int32(0); i < concurrentReq; i++ {
+		go func() {
+			defer wg.Done()
+			ticket := Ticket{Film: "batman", Room: 2, Seat: 7}
 			status := Set("bookseat", ticket)
 			if status {
 				panic("duplicated bookseat")
