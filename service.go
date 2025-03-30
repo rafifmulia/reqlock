@@ -14,7 +14,7 @@ type TicketService struct {
 func (svc *TicketService) Book(t *Ticket) bool {
 	svc.mux.Lock()
 	defer svc.mux.Unlock()
-	time.Sleep(500 * time.Millisecond) // Assume query to database takes 500 milisecond.
+	time.Sleep(500 * time.Millisecond) // Assume query to database takes 500 miliseconds.
 	for i := 0; i < len(svc.tickets); i++ {
 		if svc.tickets[i].Film == t.Film && svc.tickets[i].Room == t.Room && svc.tickets[i].Seat == t.Seat {
 			return false
