@@ -1,6 +1,6 @@
 # Description
 This package (mcache) implement hash map cache.
-So your cache value will be converted into hash map.
+So your cache value (any) will be converted into hash map key.
 ```map[any]bool```
 
 # Next Plan.
