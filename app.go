@@ -40,6 +40,7 @@ func RequestHandler(w http.ResponseWriter, r *http.Request) {
 				"code":    400,
 				"message": "Seat has been booked by someone else.",
 			},
+			"data": t,
 		})
 		return
 	}
@@ -49,5 +50,6 @@ func RequestHandler(w http.ResponseWriter, r *http.Request) {
 			"code":    200,
 			"message": "Ticket secured",
 		},
+		"data": t,
 	})
 }
