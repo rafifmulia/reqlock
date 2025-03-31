@@ -114,3 +114,26 @@ func TestCleanupRoutine1(t *testing.T) {
 		t.Fatalf("expected unavailable, got %s\n", s)
 	}
 }
+
+// go test -v -benchtime=10s -failfast -cpu=4 -race -benchmem -bench='^BenchmarkSet1$' -run='notmatch'
+// BenchmarkSet1-4          2622802              6384 ns/op              89 B/op          3 allocs/op
+func BenchmarkSet1(b *testing.B) {
+	var (
+		concurrentReq int             = b.N
+		wg            *sync.WaitGroup = &sync.WaitGroup{}
+	)
+	ticket := &Ticket{Film: "batman", Room: 2, Seat: 7}
+	Set(ck, ticket)
+	wg.Add(concurrentReq)
+	for i := 0; i < concurrentReq; i++ {
+		go func() {
+			defer wg.Done()
+			ticket := &Ticket{Film: "batman", Room: 2, Seat: 7}
+			status := Set(ck, ticket)
+			if status {
+				panic("duplicated bookseat")
+			}
+		}()
+	}
+	wg.Wait()
+}
