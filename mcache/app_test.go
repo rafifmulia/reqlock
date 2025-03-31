@@ -145,6 +145,37 @@ func TestFlush1(t *testing.T) {
 	}
 }
 
+// Being flushed when there are another [Set].
+// -count=n, n should be 1, if bigger it will fail.
+// This happens because test function being runned again, but the memory of [data] remain same.
+// go test -v -count=1 -failfast -cpu=4 -run='^TestFlush2$'
+func TestFlush2(t *testing.T) {
+	var (
+		concurrentReq int32           = 1000
+		wg            *sync.WaitGroup = &sync.WaitGroup{}
+	)
+	isAvail := func() string {
+		if Check(bookseat, dfTicket) {
+			return "avail"
+		} else {
+			return "unavailable"
+		}
+	}
+	wg.Add(int(concurrentReq))
+	for i := int32(0); i < concurrentReq; i++ {
+		go func() {
+			defer wg.Done()
+			Set(bookseat, dfTicket)
+		}()
+	}
+	go Flush()
+	wg.Wait()
+	Flush()
+	if s := isAvail(); s != "unavailable" {
+		t.Fatalf("expected unavailable, got %s\n", s)
+	}
+}
+
 // -count=n, n should be 1, if bigger it will fail.
 // This happens because test function being runned again, but the memory of [data] remain same.
 // go test -v -count=1 -failfast -cpu=4 -run='^TestCleanupRoutine1$'

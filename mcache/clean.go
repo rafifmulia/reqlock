@@ -21,16 +21,10 @@ func Delete(k string) error {
 func Flush() error {
 	gomu.Lock()
 	defer gomu.Unlock()
-	var (
-		cvs []*cacheValue = make([]*cacheValue, 0, len(data))
-	)
-	// Try to prevent `defer data[k].mu.Unlock()` from nil pointer dereference.
+	// Try to prevent `defer data[k].mu.Unlock()` from nil pointer dereference in [Set].
 	for _, cv := range data {
-		cvs = append(cvs, cv)
-	}
-	for i := 0; i < len(cvs); i++ {
-		cvs[i].mu.Lock()
-		defer cvs[i].mu.Unlock()
+		cv.mu.Lock()
+		defer cv.mu.Unlock()
 	}
 	clear(data)
 	data = make(cacheKey)

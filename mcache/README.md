@@ -5,6 +5,9 @@ because this package will turns your cache into hash value.
 ```map[value any]bool```
 That means you cannot retrieve the real value of cache, just retrieves the status of cache by its value.
 
+# Warning
+This package is not completely safe from concurrent [Set] + [Flush].
+
 # How to use
 If you have concurrent request called "bookseat",
 you can store all values into cache with `mcache.Set("bookseat", value any)`.
