@@ -7,34 +7,47 @@ import (
 )
 
 var (
-	data cacheKey      = make(cacheKey)
-	mu   *sync.RWMutex = &sync.RWMutex{}
+	data cacheKey    = make(cacheKey)
+	gomu *sync.Mutex = &sync.Mutex{}
 )
 
-type cacheKey map[string]*objKey
-type objKey struct {
-	mtm int64 // time.Now().Unix()
-	v   map[any]bool
+type cacheKey map[string]*cacheValue
+type cacheValue struct {
+	v   map[any]bool // value of cache that turns into hash.
+	mtm int64        // time.Now().Unix()
+	mu  *sync.RWMutex
 }
 
-// v must not pointer. If v is pointer, then the value will be copied.
-// Return false if key and value is already exist.
+// Initialize [data] if its nil.
+func initCacheKey(k string) {
+	gomu.Lock()
+	defer gomu.Unlock()
+	if data[k] == nil {
+		setDfCacheKey(k)
+	}
+}
+
+// Set default value of [data].
+func setDfCacheKey(k string) {
+	data[k] = &cacheValue{
+		v:  make(map[any]bool),
+		mu: &sync.RWMutex{},
+	}
+}
+
+// Set cache, and return false if cache is already exist.
+// k is cacheKey, and v is your cacheValue.
 func Set(k string, v any) bool {
 	var (
-		vo reflect.Value
+		pv reflect.Value
 	)
-	vo = reflect.ValueOf(v)
-	if vo.Kind() == reflect.Ptr {
-		v = vo.Elem().Interface()
+	initCacheKey(k)
+	pv = reflect.ValueOf(v)
+	if pv.Kind() == reflect.Ptr {
+		v = pv.Elem().Interface() // Dereference if its pointer.
 	}
-	mu.Lock()
-	defer mu.Unlock()
-	if data[k] == nil {
-		data[k] = new(objKey)
-	}
-	if data[k].v == nil {
-		data[k].v = make(map[any]bool)
-	}
+	data[k].mu.Lock()
+	defer data[k].mu.Unlock()
 	if data[k].v[v] {
 		return false
 	}
@@ -43,13 +56,14 @@ func Set(k string, v any) bool {
 	return true
 }
 
-// Return true if its exist.
+// Check if cache is exist, return true if its exist.
+// k is cacheKey, and v is your cacheValue.
 func Check(k string, v any) bool {
-	mu.RLock()
-	defer mu.RUnlock()
 	if data[k] == nil {
 		return false
 	}
+	data[k].mu.RLock()
+	defer data[k].mu.RUnlock()
 	if data[k].v == nil {
 		return false
 	}
