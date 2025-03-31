@@ -97,9 +97,9 @@ func TestRequestHandler2(t *testing.T) {
 	}
 }
 
-// This fuzz test run as a worker, it means different process, because found duplicated ticket,
-// but in TestRequestHandler* there are no duplicated ticket. So this is because fuzz test runs as a different process.
-// If run as different process, the memory will be different.
+// This fuzz test run as a worker, it means run as different process.
+// If found duplicated ticket, this is because every process has its own memory.
+// No need to wory about this, because in TestRequestHandler* there aren't found duplicated tickets.
 // go test -v -fuzztime=1m -cpu=1 -fuzz='^FuzzRequestHandler1$' -run='notmatch'
 func FuzzRequestHandler1(f *testing.F) {
 	var (
