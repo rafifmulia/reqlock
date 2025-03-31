@@ -35,6 +35,7 @@ func TestRequestHandler1(t *testing.T) {
 		json.NewDecoder(resp.Body).Decode(&data)
 	}
 	go mcache.CleanupRoutine(4*time.Second, 2)
+	defer mcache.ShutdownCleanupRoutine()
 	wg.Add(int(concurrentReq))
 	for i := int32(0); i < concurrentReq; i++ {
 		go doReq()

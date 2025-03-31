@@ -98,6 +98,7 @@ func TestSet3(t *testing.T) {
 // go test -v -count=5 -failfast -cpu=4 -run='^TestCleanupRoutine1$'
 func TestCleanupRoutine1(t *testing.T) {
 	go CleanupRoutine(4*time.Second, 3)
+	defer ShutdownCleanupRoutine()
 	t.Run("TestSet3", TestSet3)
 	isAvail := func() string {
 		if Check(ck, dfTicket) {

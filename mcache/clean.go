@@ -2,6 +2,10 @@ package mcache
 
 import "time"
 
+var (
+	ticker *time.Ticker
+)
+
 // Clear specific cache.
 func Delete(k string) error {
 	mu.Lock()
@@ -21,19 +25,23 @@ func Flush() error {
 // CleanupRoutine will run every givenTime,
 // and clean cacheKey if not used since n second.
 func CleanupRoutine(givenTime time.Duration, n int64) {
-	ticker := time.NewTicker(givenTime)
-	for range ticker.C {
-		now := time.Now().Unix()
+	ticker = time.NewTicker(givenTime)
+	for t := range ticker.C {
 		for k, v := range data {
 			if v == nil {
 				continue
 			}
 			mu.RLock()
-			diff := now - v.mtm
+			diff := t.Unix() - v.mtm
 			mu.RUnlock()
 			if diff > n {
 				Delete(k)
 			}
 		}
 	}
+}
+
+func ShutdownCleanupRoutine() error {
+	ticker.Stop()
+	return nil
 }
