@@ -8,7 +8,22 @@ var (
 	ticker *time.Ticker
 )
 
-// Clear specific cache.
+// Remove specific v from [cacheVal].
+func Remove(k string, v any) error {
+	var (
+		cv *cacheVal
+	)
+	if data[k] == nil {
+		return nil
+	}
+	cv = data[k]
+	cv.mu.Lock()
+	defer cv.mu.Unlock()
+	delete(data[k].v, v)
+	return nil
+}
+
+// Clear specific [cacheKey].
 func Delete(k string) error {
 	gomu.Lock()
 	defer gomu.Unlock()
@@ -19,12 +34,17 @@ func Delete(k string) error {
 
 // Flush all caches.
 func Flush() error {
+	var (
+		cvs []*cacheVal
+	)
 	gomu.Lock()
 	defer gomu.Unlock()
-	// Try to prevent `defer data[k].mu.Unlock()` from nil pointer dereference in [Set].
 	for _, cv := range data {
-		cv.mu.Lock()
-		defer cv.mu.Unlock()
+		cvs = append(cvs, cv)
+	}
+	for i := range cvs {
+		cvs[i].mu.Lock()
+		defer cvs[i].mu.Unlock()
 	}
 	clear(data)
 	data = make(cacheKey)
@@ -32,7 +52,7 @@ func Flush() error {
 }
 
 // CleanupRoutine will run every givenTime,
-// and clean cacheKey if not used since n second.
+// and remove the item of [cacheVal] if more than n second since its modified.
 func CleanupRoutine(givenTime time.Duration, n int64) {
 	ticker = time.NewTicker(givenTime)
 	for t := range ticker.C {
@@ -40,11 +60,11 @@ func CleanupRoutine(givenTime time.Duration, n int64) {
 			if v == nil {
 				continue
 			}
-			v.mu.RLock()
-			diff := t.Unix() - v.mtm
-			v.mu.RUnlock()
-			if diff > n {
-				Delete(k)
+			for vv, mtm := range v.v {
+				diff := t.Unix() - mtm
+				if diff > n {
+					Remove(k, vv)
+				}
 			}
 		}
 	}
