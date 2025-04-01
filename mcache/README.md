@@ -7,7 +7,7 @@ I can say this package is concurrent-safe, because the test case when i run was 
 but i don't guarantee 1000% its concurrent-safe, maybe i made a mistake.
 
 # Data Structure
-cacheKey -> The concurrent request name.
+cacheKey -> The concurrent request name.\
 cacheVal -> Cache value (being hashed) and last modified time in Unix time seconds.
 
 # How to use
