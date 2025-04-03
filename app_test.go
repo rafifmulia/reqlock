@@ -52,7 +52,7 @@ func TestRequestHandler1(t *testing.T) {
 // go test -v -count=1 -failfast -cpu=4 -run='^TestRequestHandler2$'
 func TestRequestHandler2(t *testing.T) {
 	var (
-		concurrentReq int32           = 1000
+		concurrentReq int32           = 2000
 		wg            *sync.WaitGroup = &sync.WaitGroup{}
 	)
 	ticketSvc.tickets = make([]*Ticket, 0, 1)

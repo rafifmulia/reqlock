@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
 var (
-	ticketSvc *TicketService = &TicketService{}
+	ticketSvc *TicketService = &TicketService{mu: &sync.Mutex{}}
 )
 
 func RequestHandler(w http.ResponseWriter, r *http.Request) {
